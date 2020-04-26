@@ -1,0 +1,11 @@
+node_modules
+grace.memory-card.json
+bot/config/*.json
+.env
+
+screenshot
+
+docs
+deploy.sh
+build.sh
+
