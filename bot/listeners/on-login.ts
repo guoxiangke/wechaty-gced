@@ -1,5 +1,6 @@
 import { log, Contact} from 'wechaty'
 
+const initSchedule = require('../utils/schedule')
 
 async function onLogin (user: Contact) {
   log.info(`${user} login`)
@@ -16,6 +17,7 @@ async function onLogin (user: Contact) {
   // tasks.forEach(task => {
   //   cron.scheduleJob(task.cron, () => initTask(task, bot))
   // });
+  initSchedule()
 }
 
 module.exports = onLogin

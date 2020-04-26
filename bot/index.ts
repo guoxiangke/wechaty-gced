@@ -21,8 +21,6 @@ const onLogout = require('./listeners/on-logout')
 // const onRoomjoin = require('./listeners/on-roomjoin')
 const onMessage = require('./listeners/on-message')
 const onReady = require('./listeners/on-ready')
-const initSchedule = require('./utils/schedule')
-
 // index.ts
 bot.on('scan', onScan)
 bot.on('login', (user) => onLogin(user, bot))
@@ -41,5 +39,4 @@ bot.on('room-join', (room, inviteeList, inviter) => {
 
 bot.start()
   .then(() => log.info('Bot Started.'))
-  .then(() => initSchedule())
   .catch((e) => log.error('StarterBot', e))
