@@ -1,4 +1,4 @@
-FROM node
+FROM node:10
 
 # Create app directory
 RUN mkdir -p /usr/src/app
@@ -14,7 +14,7 @@ COPY . /usr/src/app
 RUN set -ex; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    ffmpeg \
+  ffmpeg \
   ; \
   \
   apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
