@@ -32,11 +32,11 @@ bot.on('ready', onReady)
 // bot.on('message', (msg) => onMessage(msg, bot))
 
 bot.on('room-join', (room, inviteeList, inviter) => {
-  const nameList = inviteeList.map(c => c.name()).join(',')
-  log.info(`Room ${room.topic()} got new member ${nameList}, invited by ${inviter}`)
-  // 如果机器人被拉到一个新的群组里, inviteeList[0] === bot.self()
+    const nameList = inviteeList.map((c) => c.name()).join(',')
+    log.info(`Room ${room.topic()} got new member ${nameList}, invited by ${inviter}`)
+    // 如果机器人被拉到一个新的群组里, inviteeList[0] === bot.self()
 })
 
 bot.start()
-  .then(() => log.info('Bot Started.'))
-  .catch((e) => log.error('StarterBot', e))
+    .then(() => log.info('Bot Started.'))
+    .catch((e) => log.error('StarterBot', e))
