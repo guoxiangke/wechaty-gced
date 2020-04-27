@@ -1,18 +1,34 @@
 {
     "data": [
         {
-            "from": [
+            "sources": [
                 {
-                    "topic": "主人0421",
-                    "contact": "代理群主"
+                    "topic": "群名：转发源",
+                    "senders": [
+                        { "alias": "昵称1" },
+                        { "alias": "用户群昵称" },
+                        { "alias": "要监测的用户" }
+                    ]
                 }
             ],
-            "to": [
+            "destinations": [
+                { "topic": "目标群名1" },
+                { "topic": "目标群名2" },
+                { "topic": "目标群名3" },
+                { "topic": "目标群名4" },
+                { "topic": "目标群名5" }
+            ]
+        },
+        {
+            "sources": [
                 {
-                    "topic": "小屋"
-                },
+                    "topic": "主人群",
+                    "senders": [{ "alias": "天蓝" }, { "alias": "AI机器人" }]
+                }
+            ],
+            "destinations": [
                 {
-                    "topic": "Source群"
+                    "topic": "待转发群"
                 }
             ]
         }

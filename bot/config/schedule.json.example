@@ -1,53 +1,44 @@
 {
-    "data":[
+    "data": [
         {
-            "name":"psalm",
-            "cron":"0 8 * * *",
-            "to":[
-                {"value":"诗篇群发源","type":"room"}
-            ],
-            "type":"Audio//todo Text",
-            "uri": "/usr/src/app/files/19_Psalm/19_${current}.mp3",
-            "by":"count",
-            "current":{
-                "count":150,
-                "pad":{
-                    "maxLength":0,
-                    "fillString":"0"
+            "name": "psalm",
+            "cron": "0 9 * * *",
+            "to": [{ "type": "room", "value": "诗篇群发源" }],
+            "type": "Audio//todo Text",
+            "uri": "/usr/src/app/bot/files/19_Psalm/19_${current}.mp3",
+            "by": "count",
+            "current": {
+                "count": 150,
+                "pad": {
+                    "maxLength": 3,
+                    "fillString": "0"
                 },
                 "from": "2020-2-25"
             }
-            
         },
         {
-            "name":"psalm",
-            "cron":"38 6 * * *",
-            "to":[
-                {"value":"天空蔚蓝","type":"name"}
-            ],
-            "type":"Audio//todo Text",
-            "uri": "/Users/xxx/Downloads/Share/19_Psalm/19_${current}.mp3",
-            "by":"count",
-            "current":{
-                "count":150,
-                "pad":{
-                    "maxLength":3,
-                    "fillString":"0"
+            "name": "psalm",
+            "cron": "26 11 * * *",
+            "to": [{ "type": "room", "value": "主人0421" }],
+            "type": "Audio//todo Text",
+            "uri": "/usr/src/app/bot/files/19_Psalm/19_${current}.mp3",
+            "by": "count",
+            "current": {
+                "count": 150,
+                "pad": {
+                    "maxLength": 3,
+                    "fillString": "0"
                 },
                 "from": "2020-2-25"
             }
-            
         },
         {
-            "name":"每日祈祷",
-            "cron":"38 6 * * *",
-            "to":[
-                {"value":"天空蔚蓝","type":"name"}
-            ],
-            "type":"Video",
-            "by":"date",
-            "uri":"https://ybzx.xxx.ml/PrayEveryday/videos/${current}.mp4"
-            
+            "name": "每日祈祷",
+            "cron": "0 7 * * *",
+            "to": [{ "value": "天空蔚蓝", "type": "name" }],
+            "type": "Video",
+            "by": "date",
+            "uri": "https://ybzx.xxx.ml/PrayEveryday/videos/${current}.mp4"
         }
     ]
 }
