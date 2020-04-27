@@ -13,5 +13,5 @@ services:
       - ./bot:/usr/src/app/bot
       # - ./bot/config:/usr/src/app/bot/config
       # - ./bot/files:/usr/src/app/bot/files
-      - ../../../Downloads/Share/19_Psalm:/usr/src/app/bot/files/19_Psalm # 4dev resources(mp3) for one cron task
+      # - ../../../Downloads/Share/19_Psalm:/usr/src/app/bot/files/19_Psalm # 4dev resources(mp3) for one cron task
       - ./.env:/usr/src/app/.env
