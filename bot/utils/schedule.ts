@@ -6,15 +6,16 @@ const CONFIG_JSON_PATH = '../config'
 import { Vars as Global } from '../global-var'
 const bot: Wechaty = Global.bot
 
-function initSchedule() {
+async function initSchedule() {
     const cron = require('node-schedule')
 
     // todo 每天发一个链接
-    const tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
+    //let tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
+    let tasks = getTasks()
     tasks.forEach((task) => {
         cron.scheduleJob(task.cron, () => runTask(task))
     })
-    log.info(`Schedule`, 'tasks inited.')
+    log.info('SCHEDULE', `Tasks inited: ${JSON.stringify(tasks)}`)
 }
 
 function runTask(task: any) {
@@ -53,14 +54,24 @@ function runTask(task: any) {
             receiver = await bot.Contact.find({ alias: `${el.value}` })
         }
         if (!receiver) {
-            log.error('Schedule', `Can not find ${el.type}:${el.value} to send!`)
+            log.error('SCHEDULE', `Can not find ${el.type}:${el.value} to send!`)
             return
         }
 
-        log.info('Schedule', `receiver:${receiver} Current:${current} Resource:${path}`)
+        log.info('SCHEDULE', `receiver:${receiver} Current:${current} Resource:${path}`)
 
         return receiver.say(answer)
     })
+}
+
+// todo LiveLoad config
+function getTasks() {
+    log.error('SCHEDULE', 'Todo: getTask')
+    let tasks: Array<any>
+    // todo redis read
+    tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
+    // return hotImport(`${CONFIG_JSON_PATH}/schedule.json`)
+    return tasks
 }
 
 module.exports = initSchedule

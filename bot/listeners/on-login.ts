@@ -1,10 +1,11 @@
 import { log, Contact } from 'wechaty'
 
-const initSchedule = require('../utils/schedule')
-
 async function onLogin(user: Contact) {
     log.info(`${user} login`)
     // todo Contacts.get()
+
+    const initSchedule = require('../utils/schedule')
+    initSchedule()
 
     // 2.13 我的群好多，我等不了ready事件就想要操作bot的群
     // https://wechaty.js.org/v/zh/faq#too-many-rooms-to-wait
@@ -17,7 +18,6 @@ async function onLogin(user: Contact) {
     // tasks.forEach(task => {
     //   cron.scheduleJob(task.cron, () => initTask(task, bot))
     // });
-    initSchedule()
 }
 
 module.exports = onLogin

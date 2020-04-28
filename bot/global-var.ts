@@ -1,4 +1,5 @@
 import { Room, Wechaty } from 'wechaty'
+import { LevelUP } from 'levelup'
 
 export class Vars {
     public declare static autoReply: boolean
@@ -6,4 +7,5 @@ export class Vars {
 
     public declare static allRooms: Array<Room>
     public declare static bot: Wechaty
+    public declare static rocksdb: LevelUP
 }
