@@ -7,26 +7,7 @@ import { Vars as Global } from './global-var'
 import dotenv from 'dotenv'
 dotenv.config()
 
-async function initDB() {
-    log.info('DB', 'rocksdb inited, now u can use Global.rocksdb')
-    var levelup = require('levelup')
-    var leveldown = require('leveldown')
-    Global.rocksdb = await levelup(leveldown('./rocksdb'))
-}
-
-async function main() {
-    const puppet = new PuppetPadplus()
-    // 如何能不多次扫码登陆机器人
-    // https://wechaty.js.org/v/zh/faq#login-status-persistent
-    const name = process.env.WECHATY_NAME || 'grace365'
-    const bot = new Wechaty({ name, puppet })
-    Global.bot = bot
-
-    // import hotImport from 'hot-import'
-    // const initSchedule = await hotImport('./utils/schedule')
-
-    await initDB()
-
+function startBot() {
     // const onScan = require('./listeners/on-scan')
     // const onLogin = require('./listeners/on-login')
     // const onLogout = require('./listeners/on-logout')
@@ -35,17 +16,14 @@ async function main() {
     // const onMessage = require('./listeners/on-message')
     // bot.on('message', (msg) => onMessage(msg, bot)) // bot.on('login', (user) => onLogin(user, bot))
 
+    const bot = Global.bot
+
     bot.on('scan', './listeners/on-scan')
     bot.on('login', './listeners/on-login')
     bot.on('ready', './listeners/on-ready')
     bot.on('logout', './listeners/on-logout')
     bot.on('message', './listeners/on-message')
-    bot.on('heartbeat', () => {
-        log.error('ON', 'heartbeat')
-    })
-    bot.on('dong', () => {
-        log.error('ON', 'dong')
-    })
+    bot.on('heartbeat', './listeners/on-heartbeat')
 
     bot.on('room-join', (room, inviteeList, inviter) => {
         const nameList = inviteeList.map((c) => c.name()).join(',')
@@ -58,4 +36,41 @@ async function main() {
         .catch((e) => log.error('StarterBot', e))
 }
 
+async function main() {
+    await initDataBase()
+    await initBot()
+    startBot()
+}
 main().catch((e) => log.error('StarterBot', e))
+
+// functions wrapper begin
+
+function initBot() {
+    const puppet = new PuppetPadplus()
+    // 如何能不多次扫码登陆机器人
+    // https://wechaty.js.org/v/zh/faq#login-status-persistent
+    const name = process.env.WECHATY_NAME || 'grace365'
+    const bot = new Wechaty({ name, puppet })
+    Global.bot = bot
+}
+
+async function initDataBase() {
+    var levelup = require('levelup')
+    var leveldown = require('leveldown')
+    Global.rocksdb = await levelup(leveldown('../rocksdb'))
+    log.info('DB', 'inited Global.rocksdb')
+
+    Global.redis = await require('../redis/client')
+    log.info('DB', 'inited Global.redis')
+
+    checkRedis()
+}
+
+function checkRedis() {
+    let client = Global.redis
+    client.get('hello', function (err, v) {
+        if (err) log.error('REDIS', err)
+        log.info('REDIS', v)
+    })
+}
+// functions wrapper end

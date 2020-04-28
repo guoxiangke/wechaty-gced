@@ -55,6 +55,7 @@ bot 有几个垂直领域的群，都不是群主，但是每个群每天都在�
 
 -   Other
     -   [ ] 群名防篡改
+    -   [ ](队列)[https://github.com/huan/rx-queue]
     -   [ ] 多种挑战类型供发起挑战，为避免混乱，一个群只能开一种
         -   [ ] GTED-读经
         -   [ ] GTED-诗篇
@@ -95,5 +96,27 @@ docker-compose up -d
 ## 问题
 
 FileBox.fromUrl(https://1.1.1.1/1.mp3) 是一个链接地址！
+
 FileBox.fromUrl(https://1.1.1.1/2.mp4) 是一个 mp4 文件
+
 FileBox.fromUrl(https://1.1.1.1/3.jpg) 是一个图片
+
+## todo
+
+```
+1. 发起群挑战
+用户发送 “@本群群名 #群挑战”
+2.初始化redis KEY
+记录群id wechaty01_gid //gid形式，以防群名改变
+wechat01_rooms_hallenge = [room1,room2]
+记录群成员 wechaty01_gid_members = []
+每一个成员 wechaty01_gid_uid
+第一个机器人名字 wechaty01_ // grace365_
+3.响应：“恭喜，开启成功！请回复 #已读 #已完成 配置关键字”
+4.监测本群消息 wechat01_rooms_hallenge = [room1,room2]
+5.匹配关键词
+    恭喜这是有史以来第x次打开。
+    排行榜
+7.cronjob 每晚7点，统计整体打开情况，@提醒还未打开用户
+9.cronjob 每周日晚8点，提醒本周打开情况
+```

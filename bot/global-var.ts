@@ -1,5 +1,6 @@
 import { Room, Wechaty } from 'wechaty'
 import { LevelUP } from 'levelup'
+import { RedisClient } from 'redis'
 
 export class Vars {
     public declare static autoReply: boolean
@@ -8,4 +9,5 @@ export class Vars {
     public declare static allRooms: Array<Room>
     public declare static bot: Wechaty
     public declare static rocksdb: LevelUP
+    public declare static redis: RedisClient
 }
