@@ -13,7 +13,7 @@ services:
             - ./bot:/usr/src/app/bot
             - ./.env:/usr/src/app/.env
             # - ./bot/config:/usr/src/app/bot/config
-            # - ./bot/files:/usr/src/app/bot/files
+            # - ./files:/usr/src/app/files
             - ./package.json:/usr/src/app/package.json
             # Uncomment on Local
-            # - ../../../Downloads/Share/19_Psalm:/usr/src/app/bot/files/19_Psalm # 4dev resources(mp3) for one cron task
+            # - ../../../Downloads/Share/19_Psalm:/usr/src/app/files/19_Psalm # 4dev resources(mp3) for one cron task

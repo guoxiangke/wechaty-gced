@@ -1,7 +1,16 @@
-import { log, Contact, Message, Wechaty, UrlLink } from 'wechaty'
+import { log, Contact, Message, Wechaty, UrlLink, Room } from 'wechaty'
+import { MessageType } from 'wechaty-puppet'
+
+import { Autoreply } from '../model/autoreply'
+
 // Global.autoReply 全局控制变量
 import { Vars as Global } from '../global-var'
 const bot: Wechaty = Global.bot
+
+// import { RedisClient } from 'redis'
+// const redis: RedisClient = Global.redis
+import { Message as MsgModel } from '../model/message'
+
 // 关键词聊天（非群聊）默认开启，bot回复#off给filehelper关闭
 Global.autoReply = true
 const CONFIG_JSON_PATH = '../config'
@@ -21,6 +30,10 @@ async function onMessage(msg: Message) {
 
     const text = msg.text()
     const room = msg.room()
+    const from = msg.from()
+    const to = msg.to()
+
+    const type = msg.type()
     const filehelper = bot.Contact.load('filehelper')
 
     let msgSenderAlias = await sender.alias()
@@ -34,8 +47,8 @@ async function onMessage(msg: Message) {
 
     // 处理群消息
     if (room) {
-        const hostRoom = room
-        const topic = await room.topic()
+        const hostRoom: Room = room
+        const topic: string = await room.topic()
         const allRooms = Global.allRooms ? Global.allRooms : await bot.Room.findAll()
         // 万群群发！
         // 主人群的每条消息/bot发的消息，都群发给bot的所有群！
@@ -73,6 +86,12 @@ async function onMessage(msg: Message) {
                 }
             })
         })
+
+        // #群挑战#
+        if (false) {
+            const challenge = require('./common/challenge')
+            challenge(msg, room, text, sender, msgSenderAlias)
+        }
     } else {
         // 处理个人消息
         // bot 主动发消息到个人
@@ -105,52 +124,55 @@ async function onMessage(msg: Message) {
         // 匹配用户发的消息开始
         // 完全匹配模式的关键词回复配置 autoReply.json
         if (Global.autoReply) {
-            const autoReplyConfig = require(`${CONFIG_JSON_PATH}/autoReply.json`).data
-            autoReplyConfig.forEach(async (element) => {
-                if (text === element.key) {
+            // const autoReplyConfig = require(`${CONFIG_JSON_PATH}/autoReply.json`).data
+            const autoReplyConfig = await Autoreply.findAll()
+            for (let reply of autoReplyConfig) {
+                // https://www.cnblogs.com/season-huang/p/3544873.html
+                const re = new RegExp('^' + reply.keyword + '$', 'i')
+                if (re.test(text)) {
                     // 用户回复的关键词 == 设定的关键词
-                    // @see import { MessageType } from 'wechaty-puppet'
-                    switch (element.reply.type) {
-                        case 'Text':
-                            await sender.say(element.reply.content)
+                    // @todo 7 == Text
+                    switch (reply.type) {
+                        case MessageType.Text:
+                            await sender.say(reply.content.data)
                             break
 
-                        case 'Contact':
-                            const contact = await bot.Contact.find({ name: element.reply.content })
+                        case MessageType.Contact:
+                            const contact = await bot.Contact.find({ name: reply.content.data })
                             if (!contact) {
-                                log.warn(`No Contact Card to response: ${element.reply.content}`)
+                                log.warn(`No Contact Card to response: ${reply.content.data}`)
                                 return
                             }
                             const contactCard = bot.Contact.load(contact.id)
                             await sender.say(contactCard)
                             break
 
-                        case 'Audio':
-                        case 'Video':
-                        case 'Image':
-                        case 'Emoticon':
-                        case 'Attachment':
+                        case MessageType.Audio:
+                        case MessageType.Video:
+                        case MessageType.Image:
+                        case MessageType.Emoticon:
+                        case MessageType.Attachment:
                             const { FileBox } = require('file-box')
                             let fileBox: any
-                            if (element.reply.content.startsWith('http')) {
-                                fileBox = FileBox.fromUrl(`${element.reply.content}`)
+                            if (reply.content.data.startsWith('http')) {
+                                fileBox = FileBox.fromUrl(`${reply.content.data}`)
                             } else {
-                                fileBox = FileBox.fromFile(`${element.reply.content}`)
+                                fileBox = FileBox.fromFile(`${reply.content.data}`)
                             }
                             await sender.say(fileBox)
                             break
 
-                        case 'Url':
-                            const urlLink = new UrlLink(element.reply.content)
+                        case MessageType.Url:
+                            const urlLink = new UrlLink(reply.content.data)
                             await sender.say(urlLink)
                             break
 
                         default:
-                            log.warn(`Unknow MessageType config: ${element.reply.type}`)
+                            log.warn(`Unknow MessageType config: ${reply.type}`)
                             break
                     }
                 }
-            })
+            }
         }
 
         // 关键词入群，按群名
@@ -161,13 +183,89 @@ async function onMessage(msg: Message) {
                 const myRoom = await bot.Room.find({ topic: room.topic })
                 if (!myRoom) return
                 if (await myRoom.has(sender)) {
-                    return sender.say('You are already in the room')
+                    sender.say('You are already in the room')
                 }
                 await sender.say(`Will put you in ${room.topic} room!`)
-                return myRoom.add(sender)
+                myRoom.add(sender)
             }
         })
     }
+
+    // // save msg in db begin
+    if (type !== MessageType.Unknown) {
+        let content: any = text
+        // save file first
+        switch (type) {
+            case MessageType.Image:
+            case MessageType.Attachment: //mp3
+            case MessageType.Video:
+            case MessageType.Emoticon:
+                const subDir = MessageType[type].toLowerCase()
+                content = await saveMsgFile(msg, subDir)
+                break
+            case MessageType.Audio:
+                log.error(`MessageType.Video //todo`, `${content}`)
+                break
+
+            case MessageType.Url:
+                const xml_to_json = require('../utils/xml-to-json')
+                const jsonPayload = await xml_to_json.xmlToJson(content)
+                content = {
+                    title: jsonPayload.msg.appmsg.title,
+                    url: jsonPayload.msg.appmsg.url,
+                    description: jsonPayload.msg.appmsg.des,
+                    thumbnailUrl: jsonPayload.msg.appmsg.thumburl
+                }
+                break
+            case MessageType.Contact:
+            case MessageType.ChatHistory:
+            case MessageType.Location:
+            case MessageType.MiniProgram:
+            case MessageType.Transfer:
+            case MessageType.RedEnvelope:
+            case MessageType.Recalled:
+                log.warn(`MessageType saved`, `MessageType[type]`)
+                break
+            default:
+                log.error(`MessageType`, `${content}`)
+                break
+        }
+        //get content to save
+        MsgModel.create({
+            msgId: msg.id,
+            from: from ? from.id : null,
+            to: room ? room.id : to ? to.id : null,
+            type: type,
+            content: { data: content }
+        }).then(() => log.info('MsgModel', 'created'))
+    } else {
+        log.error('MsgModel', `MessageType.Unknown:${text}`)
+    }
+    // // save msg in db end
+}
+
+/**
+ * saveMsgFile
+ */
+async function saveMsgFile(msg, subDir) {
+    const file = await msg.toFileBox()
+    const targetDir = `./files/msg/${subDir}`
+    // TODO md5 files!!!
+    // todo create subDir if not exsits
+    // fs.mkdirSync(targetDir, { recursive: true })
+    // const now = moment().format('YYMMDDHH:mm:ss')
+
+    const ext = file.name.split('.')[1]
+    let filePath = `${targetDir}/${msg.id}`
+    if (ext) {
+        filePath += `.${ext}`
+    }
+
+    if (msg.type() == MessageType.Emoticon) {
+        filePath += '.gif'
+    }
+    file.toFile(filePath)
+    return filePath
 }
 
 module.exports = onMessage

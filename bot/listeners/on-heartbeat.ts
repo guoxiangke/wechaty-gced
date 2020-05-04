@@ -1,7 +1,7 @@
 import { log } from 'wechaty'
 
 async function onHeartbeat() {
-    log.warn('TODO', 'onHeartbeat')
+    log.verbose('TODO', 'onHeartbeat')
 }
 
 module.exports = onHeartbeat

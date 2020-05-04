@@ -1,37 +1,29 @@
-var client = require('../../redis/client')
-client.select('15')
-// https://blog.csdn.net/q282176713/article/details/80580886
-// https://www.cnblogs.com/zhaowinter/p/10776868.html
-client.set('hello', 'This is a value')
+import { redis as redisSync } from '../redis/redisSync'
+import { redis } from '../redis/redis'
+import { log } from 'wechaty'
 
-client.get('hello', function (err, v) {
-    console.log('redis get hello err,v', err, v)
+const test = async () => {
+    redis.set('hello', 'world2', function (err, v) {
+        if (err) log.error('REDIS', err)
+        log.info('REDIS v', v)
+    })
+    log.info('REDIS v2', await redisSync.get('hello'))
+
+    // redis.quit() //关闭
+    // /https://cnodejs.org/topic/584fb72e9ff0dbf333450a15
+
+    // 如果使用了连接 redis 或者 mysql 的库，一般需要在程序执行完后手动断开连接，否则会保持连接，程序不会退出
+    // return //todo 为啥不退出？
+    process.exit(1)
+}
+
+test()
+
+process.on('exit', function () {
+    redis.quit()
 })
 
-// client.set('hello', { name: 'jacky', age: 22 })
-
-// client.get('hello', function (err, v) {
-//     console.log('redis get hello err,v', err, v)
-// })
-
-// 列表 - List
-//先清除数据
-client.del('testLists')
-client.rpush('testLists', 'a')
-client.rpush('testLists', 'b')
-client.rpush('testLists', 'c')
-client.rpush('testLists', 'd')
-client.rpush('testLists', 'e')
-client.rpush('testLists', '1')
-
-client.lpop('testLists', function (err, v) {
-    console.log('client.lpop , err , v : ', err, v)
-})
-
-client.rpop('testLists', function (err, v) {
-    console.log('client.rpop , err, v ', err, v)
-})
-
-client.lrange('testLists', 0, -1, function (err, lists) {
-    console.log('client.lrange , err ,lists: ', err, lists)
+process.on('SIGINT', function () {
+    redis.quit()
+    console.log('redis client quit')
 })

@@ -4,6 +4,10 @@ import { PuppetPadplus } from 'wechaty-puppet-padplus'
 // Config.autoReply 全局控制变量
 import { Vars as Global } from './global-var'
 
+// import { redis } from '../redis/redis'
+// import { redis as redisSync } from '../redis/redisSync'
+// import moment from 'moment'
+
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -45,7 +49,7 @@ main().catch((e) => log.error('StarterBot', e))
 
 // functions wrapper begin
 
-function initBot() {
+async function initBot() {
     const puppet = new PuppetPadplus()
     // 如何能不多次扫码登陆机器人
     // https://wechaty.js.org/v/zh/faq#login-status-persistent
@@ -57,20 +61,23 @@ function initBot() {
 async function initDataBase() {
     var levelup = require('levelup')
     var leveldown = require('leveldown')
-    Global.rocksdb = await levelup(leveldown('../rocksdb'))
-    log.info('DB', 'inited Global.rocksdb')
+    Global.rocksdb = await levelup(leveldown('./rocksdb'))
+    log.error('DB', 'inited Global.rocksdb')
+    // Global.redis = redis
+    // Global.redisSync = redisSync
 
-    Global.redis = await require('../redis/client')
-    log.info('DB', 'inited Global.redis')
+    // log.info('DB', 'inited Global.redis and Global.aRedis')
 
-    checkRedis()
-}
-
-function checkRedis() {
-    let client = Global.redis
-    client.get('hello', function (err, v) {
-        if (err) log.error('REDIS', err)
-        log.info('REDIS', v)
-    })
+    // //初始化 redis
+    // const REDIS_LAST_INIT_AT = `REDIS_LAST_INIT_AT`
+    // // 1.如果没有 key=BotID_inited, 加载各种config.json to redis.
+    // let init_at = await redisSync.get(REDIS_LAST_INIT_AT)
+    // if (!init_at) {
+    //     log.warn(`No value of init_at`)
+    // }
+    // log.error('REDIS_LAST_INIT_AT1:', init_at)
+    // await redisSync.set(REDIS_LAST_INIT_AT, moment().format('YYMMDD HH:II:SS'))
+    // init_at = await redisSync.get(REDIS_LAST_INIT_AT)
+    // log.error('REDIS_LAST_INIT_AT2:', init_at)
 }
 // functions wrapper end
