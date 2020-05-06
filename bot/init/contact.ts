@@ -13,7 +13,7 @@ async function init(type: Type = Type.Contact) {
     const contactList: Contact[] | null = await bot.Contact.findAll()
     for (const contact of contactList) {
         // contactList
-        await findOrCreate(contact, type)
+        findOrCreate(contact, type)
     }
 }
 

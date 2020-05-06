@@ -4,8 +4,9 @@
     "description": "remind group task(challenge) everyday",
     "main": "index.js",
     "scripts": {
+        "test": "npm run db:init && npm run db:import && npm start",
         "db:init": "ts-node bot/model/init.ts",
-        "db:import": "ts-node bot/model/import/autoreply.ts",
+        "db:import": "ts-node bot/model/import/index.ts",
         "dev": "WECHATY_LOG=verbose ts-node bot/index.ts",
         "start": "WECHATY_LOG=info ts-node bot/index.ts",
         "test:redis": "ts-node bot/test/redis.ts",

@@ -61,7 +61,7 @@ async function initBot() {
 async function initDataBase() {
     var levelup = require('levelup')
     var leveldown = require('leveldown')
-    Global.rocksdb = await levelup(leveldown('./rocksdb'))
+    Global.rocksdb = await levelup(leveldown('../rocksdb'))
     log.error('DB', 'inited Global.rocksdb')
     // Global.redis = redis
     // Global.redisSync = redisSync

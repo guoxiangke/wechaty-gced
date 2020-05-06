@@ -9,8 +9,8 @@ import { Type, Contact as contactModel } from '../model/contact'
 import { findOrCreate } from '../model/contactfindOrCreate'
 
 /**
- * init contacts and rooms
- * 把群主、群成员、群 存储在数据库中
+ * 把群主、群成员、群关系 存储/更新到数据库中
+ * contacts     memember
  */
 
 async function init() {
@@ -21,25 +21,18 @@ async function init() {
         let contact: contactModel | any = await findOrCreate(owner, Type.RoomOwner)
         if (!contact) return
 
-        log.error('RoomInit', `'${contact.wechat_id}'=>${contact}`)
-
-        // save contact end
-
-        let roomModel = await RoomModel.findOne({
-            where: { roomId: room.id }
-        })
-
-        if (!roomModel) {
-            log.error(`room not exsits: ${room.id}, Create and get all members`)
-            await RoomModel.create({
+        await RoomModel.findOrCreate({
+            where: { roomId: room.id },
+            defaults: {
                 roomId: room.id,
                 topic: await room.topic(), //room.topic([newTopic]) ⇒ Promise <void | string>
                 announce: await room.announce(), //room.announce([text]) ⇒ Promise <void | string>
                 ownerId: contact.id //string // room.owner() ⇒ Contact | null  => Contact.id
-            })
-                .then()
-                .catch((e) => console.log(`${e}`))
-        }
+            }
+        })
+            .then()
+            .catch((e) => log.error(`${e}`))
+        log.info('RoomInit', `${room.id}, '${contact.wechatId}'=>${contact.name}`)
     }
     await thenAllMember()
 }
@@ -51,20 +44,20 @@ async function thenAllMember() {
         let roomInstance = await RoomModel.findOne({
             where: { roomId: room.id }
         })
+        log.verbose('RoomInitAllMembers', `${roomInstance.id}`)
         for (const contact of contacts) {
             const contactInstance = await findOrCreate(contact, Type.RoomMemeber)
-
-            log.error('thenAllMember', `${roomInstance.id} - ${contactInstance.id}`)
             // roomInstance.addMembers(contactInstance)
             // contactInstance.addRoom(roomInstance)
-            await MemberModel.create({
-                roomId: roomInstance.id,
-                contactId: contactInstance.id //room.topic([newTopic]) ⇒ Promise <void | string>
+            await MemberModel.findOrCreate({
+                where: {
+                    roomId: roomInstance.id,
+                    contactId: contactInstance.id
+                }
             })
                 .then()
-                .catch((e) => console.log(`${e}`))
+                .catch((e) => log.error(`${e}`))
         }
-        // log.error('Await getContacts', await roomInstance.getContacts())
     }
 }
 

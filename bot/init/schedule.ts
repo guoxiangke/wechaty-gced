@@ -1,25 +1,28 @@
 import { log, Contact, Wechaty, Room } from 'wechaty'
 const { FileBox } = require('file-box')
 const moment = require('moment')
-const CONFIG_JSON_PATH = '../config'
 
 import { Vars as Global } from '../global-var'
 const bot: Wechaty = Global.bot
 
-async function initSchedule() {
-    const cron = require('node-schedule')
+const { Schedule } = require('../model/schedule')
 
+async function init() {
+    const cron = require('node-schedule')
     // todo 每天发一个链接
     //let tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
-    let tasks = getTasks()
+    let tasks: Array<any> = await Schedule.findAll()
+    for (let task of tasks) {
+        log.info('SCHEDULE_inited', JSON.stringify(task))
+    }
+
     tasks.forEach((task) => {
-        cron.scheduleJob(task.cron, () => runTask(task))
+        cron.scheduleJob(task.cron, () => setOrRun(task))
     })
-    log.info('SCHEDULE', `Tasks inited: ${JSON.stringify(tasks)}`)
 }
 
-function runTask(task: any) {
-    const rule = task.current
+async function setOrRun(task: any) {
+    const rule = task.current.data
 
     let current: String = ''
     if (task.by === 'count') {
@@ -33,17 +36,19 @@ function runTask(task: any) {
     if (task.by === 'date') {
         current = moment().format('MMDD') //0101.mp4
     }
-    const path = task.uri.replace('${current}', current)
+    const path = task.path.replace('${current}', current)
 
     // todo answer = Text 每日一句
     let answer: any
-    if (task.uri.startsWith('http')) {
+    if (task.path.startsWith('http')) {
         answer = FileBox.fromUrl(encodeURI(path))
     } else {
         answer = FileBox.fromFile(path)
     }
 
-    task.to.forEach(async (el) => {
+    log.info('SCHEDULE', `Current:${current} Resource:${path}`)
+
+    task.to.data.forEach(async (el) => {
         let receiver: Room | Contact | null = null
         if (el.type === 'room') {
             // get the room by topic
@@ -58,20 +63,13 @@ function runTask(task: any) {
             return
         }
 
-        log.info('SCHEDULE', `receiver:${receiver} Current:${current} Resource:${path}`)
+        log.info('SCHEDULE', `Sent to: ${receiver}`)
 
         return receiver.say(answer)
     })
 }
 
-// todo LiveLoad config
-function getTasks() {
-    log.error('SCHEDULE', 'Todo: getTask')
-    let tasks: Array<any>
-    // todo redis read
-    tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
-    // return hotImport(`${CONFIG_JSON_PATH}/schedule.json`)
-    return tasks
-}
+// module.exports = init
+// declares 'init' locally, but it is not exported.
 
-module.exports = initSchedule
+export { init }

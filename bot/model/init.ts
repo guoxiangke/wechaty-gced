@@ -5,9 +5,9 @@ import { Room } from './room'
 import { Member } from './member'
 // import { HasMany } from 'sequelize/types'
 
-// import { Autoreply } from './autoreply'
 require('./autoreply')
 require('./message')
+require('./schedule')
 
 // //
 // Contact.hasMany(Message, {

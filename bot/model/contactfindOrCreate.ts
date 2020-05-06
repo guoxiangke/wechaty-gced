@@ -5,7 +5,6 @@ async function findOrCreate(contact: Contact, from: Type = Type.RoomMemeber) {
     let contactModel = await ContactModel.findOne({
         where: { wechatId: contact.id }
     })
-
     if (!contactModel) {
         contactModel = await ContactModel.create({
             wechatId: contact.id, //Get Contact id. This function is depending on the Puppet Implementation, see puppet-compatible-table
@@ -18,9 +17,8 @@ async function findOrCreate(contact: Contact, from: Type = Type.RoomMemeber) {
             from: from
             // avatar: contact.avatar() //contact.avatar() ⇒ Promise <FileBox> ==> toUrl
         })
-        log.info('contactModel.findOrCreate', `new ${contactModel.name}  fromType:${from}`)
-    } else {
-        log.info('contactModel.findOrCreate', `exsits ${contactModel.name}  fromType:${from}`)
+            .then()
+            .catch((e) => log.error(`${e}`))
     }
 
     return contactModel
