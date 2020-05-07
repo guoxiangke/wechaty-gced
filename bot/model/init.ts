@@ -8,6 +8,7 @@ import { Member } from './member'
 require('./autoreply')
 require('./message')
 require('./schedule')
+require('./forward')
 
 // //
 // Contact.hasMany(Message, {

@@ -11,6 +11,9 @@ const bot: Wechaty = Global.bot
 // const redis: RedisClient = Global.redis
 import { Message as MsgModel } from '../model/message'
 
+import { Forward as ForwardModel, Type as ForwardType } from '../model/forward'
+
+const xml_to_json = require('../utils/xml-to-json')
 // 关键词聊天（非群聊）默认开启，bot回复#off给filehelper关闭
 Global.autoReply = true
 const CONFIG_JSON_PATH = '../config'
@@ -33,7 +36,7 @@ async function onMessage(msg: Message) {
     const from = msg.from()
     const to = msg.to()
 
-    const type = msg.type()
+    let type: number | any = msg.type()
     const filehelper = bot.Contact.load('filehelper')
 
     let msgSenderAlias = await sender.alias()
@@ -62,30 +65,67 @@ async function onMessage(msg: Message) {
         }
 
         // 经典转发
-        // todo Redis/DB + UI config!
-        const forwards = require(`${CONFIG_JSON_PATH}/forward.json`).data
+        // todo UI config!
 
-        forwards.forEach((forward) => {
-            const destinations = forward.destinations
-            forward.sources.forEach((source) => {
-                if (topic === source.topic) {
-                    source.senders.forEach(async (sender) => {
+        // const forwards = require(`${CONFIG_JSON_PATH}/forward.json`).data
+        const forwards = await ForwardModel.findAll()
+        for (let source of forwards) {
+            const destinations = source.destinations.data
+            if (source.fromType == ForwardType.Room) {
+                //转发群消息
+                if (topic === source.fromName) {
+                    //如果是来自于 配置要群发的群
+                    //如果 发送者 在配置中
+                    source.senders.data.forEach(async (sender) => {
                         if (sender.alias === msgSenderAlias) {
                             allRooms.forEach(async (room) => {
                                 if (room === hostRoom) return //不再次转发到源群
-                                const forwardRoomTopic = await room.topic()
                                 destinations.forEach(async (to) => {
-                                    if (to.topic === forwardRoomTopic) {
+                                    if (to.type === 'room' && to.topic === (await room.topic())) {
                                         log.info('onMessage', `FORWOARD_TO ${room}`)
-                                        await msg.forward(room)
+                                        if (type !== MessageType.Unknown) {
+                                            await msg.forward(room)
+                                        } else {
+                                            //MessageType.Unknown
+                                            const jsonPayload = await xml_to_json.xmlToJson(text)
+                                            if (jsonPayload.msg.appmsg.type == 3) {
+                                                // type = 'MusicLink' // 15 Music
+
+                                                // 解析 Music xml to new msg filebox
+                                                //msg.appmsg.title = 【620】旷野吗哪
+                                                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
+                                                //msg.appmsg.type = 3
+                                                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
+                                                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
+                                                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
+
+                                                const urlLink = new UrlLink({
+                                                    description: jsonPayload.msg.appmsg.des,
+                                                    thumbnailUrl:
+                                                        'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
+                                                    title: jsonPayload.msg.appmsg.title,
+                                                    url: jsonPayload.msg.appmsg.url
+                                                })
+                                                await room.say(urlLink)
+                                            }
+                                            // 33 小程序
+                                            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
+                                            //msg.appmsg.type = 33
+                                            //。url
+                                        }
+                                    }
+                                    if (to.type === 'contact') {
+                                        //转发到个人！todo
                                     }
                                 })
                             })
                         }
                     })
                 }
-            })
-        })
+            } else {
+                //转发个人消息，不在room里处理
+            }
+        }
 
         // #群挑战#
         if (false) {
@@ -194,6 +234,7 @@ async function onMessage(msg: Message) {
     // // save msg in db begin
     if (type !== MessageType.Unknown) {
         let content: any = text
+        let save: boolean = false
         // save file first
         switch (type) {
             case MessageType.Image:
@@ -202,13 +243,13 @@ async function onMessage(msg: Message) {
             case MessageType.Emoticon:
                 const subDir = MessageType[type].toLowerCase()
                 content = await saveMsgFile(msg, subDir)
+                save = true
                 break
             case MessageType.Audio:
                 log.error(`MessageType.Video //todo`, `${content}`)
                 break
 
             case MessageType.Url:
-                const xml_to_json = require('../utils/xml-to-json')
                 const jsonPayload = await xml_to_json.xmlToJson(content)
                 content = {
                     title: jsonPayload.msg.appmsg.title,
@@ -216,6 +257,7 @@ async function onMessage(msg: Message) {
                     description: jsonPayload.msg.appmsg.des,
                     thumbnailUrl: jsonPayload.msg.appmsg.thumburl
                 }
+                save = true
                 break
             case MessageType.Contact:
             case MessageType.ChatHistory:
@@ -224,22 +266,24 @@ async function onMessage(msg: Message) {
             case MessageType.Transfer:
             case MessageType.RedEnvelope:
             case MessageType.Recalled:
-                log.warn(`MessageType saved`, `MessageType[type]`)
                 break
             default:
-                log.error(`MessageType`, `${content}`)
                 break
         }
         //get content to save
+        if (!save) {
+            log.error(`MessageType`, `${MessageType[type]} not saved! ${content}`)
+            return
+        }
         MsgModel.create({
             msgId: msg.id,
             from: from ? from.id : null,
             to: room ? room.id : to ? to.id : null,
             type: type,
             content: { data: content }
-        }).then(() => log.info('MsgModel', 'created'))
+        }).then(() => log.info('onMessage', `MsgModel ${MessageType[type]}: created`))
     } else {
-        log.error('MsgModel', `MessageType.Unknown:${text}`)
+        log.error('onMessage', `MsgModel MessageType.Unknown: ${text}`)
     }
     // // save msg in db end
 }
