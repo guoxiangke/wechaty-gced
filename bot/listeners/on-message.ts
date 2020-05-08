@@ -59,87 +59,39 @@ async function onMessage(msg: Message) {
         const hostRoom: Room = room
         const topic: string = await room.topic()
         const allRooms = Global.allRooms ? Global.allRooms : await bot.Room.findAll()
-        // 万群群发！
+        // 万群群发begin
         // 主人群的每条消息/bot发的消息，都群发给bot的所有群！
         const ownerGroupName: string = process.env.FORWOARD_ALL || 'FORWOARD_ALL'
         if (topic === ownerGroupName) {
             log.info('onMessage', `FORWOARD_ALL: ${allRooms}`)
             allRooms.forEach((room) => {
                 if (room === hostRoom) return //不再次转发到源群
-                return msg.forward(room)
+                //返回 不做DB和files处理了！
+                msg.forward(room) //return 不用返回，因为转发到群的信息不做二次onmessage event
             })
         }
+        // 万群群发end
 
-        // 经典转发
-        // todo UI config!
-
+        // forward begin for room
+        // 经典转发 todo UI config!
         // const forwards = require(`${CONFIG_JSON_PATH}/forward.json`).data
         const forwards = await ForwardModel.findAll({ where: { fromType: ForwardType.Room } })
-
         for (let forward of forwards) {
             const destinations = forward.destinations.data
-
             //转发群消息
             if (topic === forward.fromName) {
                 //如果是来自于 配置要群发的群
-                //如果 发送者 在配置中
-                if (forward.senders.data.includes(msgSenderAlias)) {
-                    // return "Element found!!";
-                    destinations.forEach(async (to) => {
-                        let unknownMsg: any
-                        if (type == MessageType.Unknown) {
-                            //MessageType.Unknown
-                            const jsonPayload = await xml_to_json.xmlToJson(text)
-                            if (jsonPayload.msg.appmsg.type == 3) {
-                                // type = 'MusicLink' // 15 Music
-
-                                // 解析 Music xml to new msg filebox
-                                //msg.appmsg.title = 【620】旷野吗哪
-                                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
-                                //msg.appmsg.type = 3
-                                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
-                                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
-                                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
-
-                                unknownMsg = new UrlLink({
-                                    description: jsonPayload.msg.appmsg.des + ' 点击[浮窗]后台播放',
-                                    thumbnailUrl:
-                                        'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
-                                    title: jsonPayload.msg.appmsg.title,
-                                    url: jsonPayload.msg.appmsg.url
-                                })
-                            }
-                            // 33 小程序
-                            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
-                            //msg.appmsg.type = 33
-                            //。url
-                        }
-                        if (to.type === 'room' && to.topic in Global.indexRooms) {
-                            let room = Global.indexRooms[to.topic]
-                            if (type !== MessageType.Unknown) {
-                                log.info('onMessage', `FORWOARD_TO ${room}`)
-                                await msg.forward(room)
-                            } else {
-                                await room.say(unknownMsg)
-                            }
-                        }
-                        if (to.type === 'contact') {
-                            //转发给个人
-                            // https://github.com/wechaty/wechaty/issues/1217  Contact.find(error!)
-                            let who = await bot.Contact.find({ alias: to.alias })
-                            if (who) {
-                                if (type !== MessageType.Unknown) {
-                                    log.info('onMessage', `FORWOARD_TO ${who}`)
-                                    await msg.forward(who)
-                                } else {
-                                    await who.say(unknownMsg)
-                                }
-                            }
-                        }
-                    })
+                if (
+                    //如果 发送者 在配置中 or
+                    forward.senders.data.includes(msgSenderAlias) ||
+                    // 如果是空，则代表所有人的消息都群发到 destinations
+                    forward.senders.data.length == 0
+                ) {
+                    forwardTo(destinations, msg)
                 }
             }
         }
+        // forward end for room
 
         // #群挑战#
         if (false) {
@@ -246,6 +198,17 @@ async function onMessage(msg: Message) {
                 myRoom.add(sender)
             }
         })
+
+        // forward begin 转发个人配置
+        const forwards = await ForwardModel.findAll({ where: { fromType: ForwardType.Contact } })
+
+        for (let forward of forwards) {
+            const destinations = forward.destinations.data
+            if (msgSenderAlias === forward.fromName) {
+                forwardTo(destinations, msg)
+            }
+        }
+        // forward end
     }
 
     // // save msg in db begin
@@ -260,7 +223,6 @@ async function onMessage(msg: Message) {
             case MessageType.Emoticon:
                 const subDir = MessageType[type].toLowerCase()
                 content = await saveMsgFile(msg, subDir)
-
                 break
 
             case MessageType.Url:
@@ -354,4 +316,61 @@ async function saveMsgFile(msg, subDir) {
     return fileBox.path
 }
 
+// 转发处理，转发源分2重情况：room或contact 即转发来自群的消息或转发来自某个联系人的消息
+// 如果是来自群的消息，可以配置只转发群内的某几个人的消息，或者全部转发（senders为空）
+function forwardTo(destinations: Array<any>, msg) {
+    const text = msg.text()
+    let type: number | any = msg.type()
+    destinations.forEach(async (to) => {
+        let unknownMsg: any
+        if (type == MessageType.Unknown) {
+            //MessageType.Unknown
+            const jsonPayload = await xml_to_json.xmlToJson(text)
+            if (jsonPayload.msg.appmsg.type == 3) {
+                // type = 'MusicLink' // 15 Music
+
+                // 解析 Music xml to new msg filebox
+                //msg.appmsg.title = 【620】旷野吗哪
+                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
+                //msg.appmsg.type = 3
+                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
+                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
+                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
+
+                unknownMsg = new UrlLink({
+                    description: jsonPayload.msg.appmsg.des + ' 点击[浮窗]后台播放',
+                    thumbnailUrl: 'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
+                    title: jsonPayload.msg.appmsg.title,
+                    url: jsonPayload.msg.appmsg.url
+                })
+            }
+            // 33 小程序
+            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
+            //msg.appmsg.type = 33
+            //。url
+        }
+        if (to.type === 'room' && to.topic in Global.indexRooms) {
+            let room = Global.indexRooms[to.topic]
+            if (type !== MessageType.Unknown) {
+                log.info('onMessage', `FORWOARD_TO ${room}`)
+                await msg.forward(room)
+            } else {
+                await room.say(unknownMsg)
+            }
+        }
+        if (to.type === 'contact') {
+            //转发给个人
+            // https://github.com/wechaty/wechaty/issues/1217  Contact.find(error!)
+            let who = await bot.Contact.find({ alias: to.alias })
+            if (who) {
+                if (type !== MessageType.Unknown) {
+                    log.info('onMessage', `FORWOARD_TO ${who}`)
+                    await msg.forward(who)
+                } else {
+                    await who.say(unknownMsg)
+                }
+            }
+        }
+    })
+}
 module.exports = onMessage

@@ -1,35 +1,35 @@
 {
     "data": [
         {
-            "sources": [
-                {
-                    "topic": "群名：转发源",
-                    "senders": [
-                        { "alias": "昵称1" },
-                        { "alias": "用户群昵称" },
-                        { "alias": "要监测的用户" }
-                    ]
-                }
-            ],
+            "fromType": "room",
+            "fromName": "诗篇群发源",
+            "senders": ["扎根（鲍弟兄）", "AI机器人", "天空蔚蓝"], // 如果是空，则代表所有人的消息都群发到 destinations
             "destinations": [
-                { "topic": "目标群名1" },
-                { "topic": "目标群名2" },
-                { "topic": "目标群名3" },
-                { "topic": "目标群名4" },
-                { "topic": "目标群名5" }
+                { "type": "room", "topic": "七里渠之光" },
+                { "type": "room", "topic": "神恩同学" },
+                { "type": "room", "topic": "亲人之家" },
+                { "type": "room", "topic": "开心大家庭" },
+                { "type": "room", "topic": "重生之路" },
+                { "type": "room", "topic": "厢红旗之盐" },
+                { "type": "room", "topic": "活水工人" },
+                { "type": "room", "topic": "西三旗交流群" },
+                { "type": "room", "topic": "西罗亚小组" },
+                { "type": "room", "topic": "西奈山jh" },
+                { "type": "room", "topic": "活水" }
             ]
         },
         {
-            "sources": [
-                {
-                    "topic": "主人群",
-                    "senders": [{ "alias": "天蓝" }, { "alias": "AI机器人" }]
-                }
-            ],
+            "fromType": "room",
+            "fromName": "主人0421",
+            "senders": ["AI机器人", "天空蔚蓝"],
+            "destinations": [{ "type": "room", "topic": "Source群" }]
+        },
+        {
+            "fromType": "contact",
+            "fromName": "天空蔚蓝",
+            "senders": [],
             "destinations": [
-                {
-                    "topic": "待转发群"
-                }
+                { "type": "room", "topic": "Source群" }
             ]
         }
     ]
