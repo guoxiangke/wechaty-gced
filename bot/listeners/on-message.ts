@@ -3,7 +3,8 @@ import { MessageType } from 'wechaty-puppet'
 
 import { Autoreply } from '../model/autoreply'
 import { Autojoin } from '../model/autojoin'
-
+import { FileBox } from '../model/filebox'
+const crypto = require('crypto')
 // Global.autoReply 全局控制变量
 import { Vars as Global } from '../global-var'
 const bot: Wechaty = Global.bot
@@ -326,8 +327,31 @@ async function saveMsgFile(msg, subDir) {
     if (msg.type() == MessageType.Emoticon) {
         filePath += '.gif'
     }
-    file.toFile(filePath)
-    return filePath
+
+    // await file.toFile(filePath)
+
+    //  确保每个文件只存储一次
+    //读取一个Buffer
+    // var fs = require('fs')
+    // var path = require('path')
+    // var buffer = fs.readFileSync(path.resolve(__dirname, `../../${filePath}`))
+    var buffer = await file.toBuffer(filePath)
+    var fsHash = crypto.createHash('md5')
+    fsHash.update(buffer)
+    var md5 = fsHash.digest('hex')
+
+    const [fileBox, created] = await FileBox.findOrCreate({
+        where: { md5: md5 },
+        defaults: {
+            path: filePath
+        }
+    })
+    if (created) {
+        file.toFile(filePath)
+        // fs.unlinkSync(filePath)
+    }
+    //  确保每个文件存储一次 end
+    return fileBox.path
 }
 
 module.exports = onMessage

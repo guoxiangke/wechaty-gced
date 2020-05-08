@@ -10,6 +10,7 @@ require('./message')
 require('./schedule')
 require('./forward')
 require('./autojoin')
+require('./filebox') //  确保每个文件只存储一次
 
 // //
 // Contact.hasMany(Message, {
