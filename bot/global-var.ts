@@ -5,6 +5,7 @@ import { RedisClient } from 'redis'
 export class Vars {
     public declare static bot: Wechaty
     public declare static allRooms: Array<Room>
+    public declare static indexRooms: Array<any>
 
     public declare static autoReply: boolean
     public declare static aiReply: boolean

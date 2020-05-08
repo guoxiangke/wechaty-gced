@@ -1,8 +1,7 @@
 const { Schedule } = require('../schedule')
 import { MessageType } from 'wechaty-puppet'
-
-const CONFIG_JSON_PATH = '../../config'
 ;(async () => {
+    const CONFIG_JSON_PATH = '../../config'
     const ScheduleConfig = require(`${CONFIG_JSON_PATH}/schedule.json`).data
 
     ScheduleConfig.forEach(async (el) => {

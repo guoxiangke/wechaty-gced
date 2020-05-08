@@ -15,12 +15,6 @@ async function onReady() {
     // // await aRedis.set(REDIS_INIT_AT, Date.now())
     // init_at = await redisSync.get(REDIS_INIT_AT)
     // log.error('REDIS_INIT_AT2', init_at)
-    // Then we can use on ther TS file like blow:
-    // let allRooms = Global.allRooms
-    // // 4dev
-    // allRooms.forEach((room:Room) => {
-    //     log.verbose(`${room}:${room.id}`)
-    // })
 }
 
 module.exports = onReady

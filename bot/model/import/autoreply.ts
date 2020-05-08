@@ -1,8 +1,7 @@
 const { Autoreply } = require('../autoreply')
 import { MessageType } from 'wechaty-puppet'
-
-const CONFIG_JSON_PATH = '../../config'
 ;(async () => {
+    const CONFIG_JSON_PATH = '../../config'
     const autoReplyConfig = require(`${CONFIG_JSON_PATH}/autoReply.json`).data
 
     autoReplyConfig.forEach(async (element) => {

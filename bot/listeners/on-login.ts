@@ -11,9 +11,15 @@ async function onLogin(user: Contact) {
     log.error(`Bot is ${contact.name()}`)
     log.error(`BotID is ${contact.id}`)
 
-    Global.allRooms = await bot.Room.findAll()
-    log.info('onReady', `Now you can use Global.allRooms: ${Global.allRooms}`)
+    let allRooms = await bot.Room.findAll()
+    Global.allRooms = allRooms
 
+    //只处理最后一个同名的群，忽略其他同名群
+    let indexRooms: Array<any> = []
+    allRooms.map(async (room) => {
+        indexRooms[await room.topic()] = room
+    })
+    Global.indexRooms = indexRooms
     /**
      * 初始化
      * 存储/更新 所有联系人和聊天室 from wxbot

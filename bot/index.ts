@@ -27,13 +27,10 @@ function startBot() {
     bot.on('ready', './listeners/on-ready')
     bot.on('logout', './listeners/on-logout')
     bot.on('message', './listeners/on-message')
+    //
     bot.on('heartbeat', './listeners/on-heartbeat')
-
-    bot.on('room-join', (room, inviteeList, inviter) => {
-        const nameList = inviteeList.map((c) => c.name()).join(',')
-        log.info(`Room ${room.topic()} got new member ${nameList}, invited by ${inviter}`)
-        // 如果机器人被拉到一个新的群组里, inviteeList[0] === bot.self()
-    })
+    // 入群发送欢迎消息/群公告 @see ./config/autojoin.json
+    bot.on('room-join', './listeners/on-room-join')
 
     bot.start()
         .then(() => log.info('Bot Started.'))

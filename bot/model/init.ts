@@ -9,6 +9,7 @@ require('./autoreply')
 require('./message')
 require('./schedule')
 require('./forward')
+require('./autojoin')
 
 // //
 // Contact.hasMany(Message, {

@@ -2,6 +2,7 @@ import { log, Contact, Message, Wechaty, UrlLink, Room } from 'wechaty'
 import { MessageType } from 'wechaty-puppet'
 
 import { Autoreply } from '../model/autoreply'
+import { Autojoin } from '../model/autojoin'
 
 // Global.autoReply 全局控制变量
 import { Vars as Global } from '../global-var'
@@ -16,13 +17,13 @@ import { Forward as ForwardModel, Type as ForwardType } from '../model/forward'
 const xml_to_json = require('../utils/xml-to-json')
 // 关键词聊天（非群聊）默认开启，bot回复#off给filehelper关闭
 Global.autoReply = true
-const CONFIG_JSON_PATH = '../config'
+// const CONFIG_JSON_PATH = '../config'
 
 async function onMessage(msg: Message) {
-    log.info('onMessage', `${msg}`)
+    log.error('onMessage', `${msg}`)
     // Handle Exception
-    if (msg.age() > 60) {
-        log.info('onMessage', 'Message discarded because its TOO OLD(than 1 minute)')
+    if (msg.age() > 300) {
+        log.warn('onMessage', 'Message discarded because its TOO OLD(than 5 minute)')
         return
     }
     const sender: Contact | null = msg.from()
@@ -37,13 +38,17 @@ async function onMessage(msg: Message) {
     const to = msg.to()
 
     let type: number | any = msg.type()
+
+    if (type === MessageType.Recalled) {
+        // Recalled 不支持转发，无法撤回
+        return
+    }
     const filehelper = bot.Contact.load('filehelper')
 
     let msgSenderAlias = await sender.alias()
     // bot本身无法通过alias获取群昵称
     if (!msgSenderAlias) {
         msgSenderAlias = await sender.name()
-        log.info('onMessage', `get sender by name ${msgSenderAlias}`)
     }
 
     // todo 指定公众号消息的第X条消息转发到指定群里
@@ -68,62 +73,70 @@ async function onMessage(msg: Message) {
         // todo UI config!
 
         // const forwards = require(`${CONFIG_JSON_PATH}/forward.json`).data
-        const forwards = await ForwardModel.findAll()
-        for (let source of forwards) {
-            const destinations = source.destinations.data
-            if (source.fromType == ForwardType.Room) {
-                //转发群消息
-                if (topic === source.fromName) {
-                    //如果是来自于 配置要群发的群
-                    //如果 发送者 在配置中
-                    source.senders.data.forEach(async (sender) => {
-                        if (sender.alias === msgSenderAlias) {
-                            allRooms.forEach(async (room) => {
-                                if (room === hostRoom) return //不再次转发到源群
-                                destinations.forEach(async (to) => {
-                                    if (to.type === 'room' && to.topic === (await room.topic())) {
-                                        log.info('onMessage', `FORWOARD_TO ${room}`)
-                                        if (type !== MessageType.Unknown) {
-                                            await msg.forward(room)
-                                        } else {
-                                            //MessageType.Unknown
-                                            const jsonPayload = await xml_to_json.xmlToJson(text)
-                                            if (jsonPayload.msg.appmsg.type == 3) {
-                                                // type = 'MusicLink' // 15 Music
+        const forwards = await ForwardModel.findAll({ where: { fromType: ForwardType.Room } })
 
-                                                // 解析 Music xml to new msg filebox
-                                                //msg.appmsg.title = 【620】旷野吗哪
-                                                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
-                                                //msg.appmsg.type = 3
-                                                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
-                                                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
-                                                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
+        for (let forward of forwards) {
+            const destinations = forward.destinations.data
 
-                                                const urlLink = new UrlLink({
-                                                    description: jsonPayload.msg.appmsg.des,
-                                                    thumbnailUrl:
-                                                        'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
-                                                    title: jsonPayload.msg.appmsg.title,
-                                                    url: jsonPayload.msg.appmsg.url
-                                                })
-                                                await room.say(urlLink)
-                                            }
-                                            // 33 小程序
-                                            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
-                                            //msg.appmsg.type = 33
-                                            //。url
-                                        }
-                                    }
-                                    if (to.type === 'contact') {
-                                        //转发到个人！todo
-                                    }
+            //转发群消息
+            if (topic === forward.fromName) {
+                //如果是来自于 配置要群发的群
+                //如果 发送者 在配置中
+                if (forward.senders.data.includes(msgSenderAlias)) {
+                    // return "Element found!!";
+                    destinations.forEach(async (to) => {
+                        let unknownMsg: any
+                        if (type == MessageType.Unknown) {
+                            //MessageType.Unknown
+                            const jsonPayload = await xml_to_json.xmlToJson(text)
+                            if (jsonPayload.msg.appmsg.type == 3) {
+                                // type = 'MusicLink' // 15 Music
+
+                                // 解析 Music xml to new msg filebox
+                                //msg.appmsg.title = 【620】旷野吗哪
+                                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
+                                //msg.appmsg.type = 3
+                                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
+                                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
+                                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
+
+                                unknownMsg = new UrlLink({
+                                    description: jsonPayload.msg.appmsg.des + ' 点击[浮窗]后台播放',
+                                    thumbnailUrl:
+                                        'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
+                                    title: jsonPayload.msg.appmsg.title,
+                                    url: jsonPayload.msg.appmsg.url
                                 })
-                            })
+                            }
+                            // 33 小程序
+                            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
+                            //msg.appmsg.type = 33
+                            //。url
+                        }
+                        if (to.type === 'room' && to.topic in Global.indexRooms) {
+                            let room = Global.indexRooms[to.topic]
+                            if (type !== MessageType.Unknown) {
+                                log.info('onMessage', `FORWOARD_TO ${room}`)
+                                await msg.forward(room)
+                            } else {
+                                await room.say(unknownMsg)
+                            }
+                        }
+                        if (to.type === 'contact') {
+                            //转发给个人
+                            // https://github.com/wechaty/wechaty/issues/1217  Contact.find(error!)
+                            let who = await bot.Contact.find({ alias: to.alias })
+                            if (who) {
+                                if (type !== MessageType.Unknown) {
+                                    log.info('onMessage', `FORWOARD_TO ${who}`)
+                                    await msg.forward(who)
+                                } else {
+                                    await who.say(unknownMsg)
+                                }
+                            }
                         }
                     })
                 }
-            } else {
-                //转发个人消息，不在room里处理
             }
         }
 
@@ -159,8 +172,10 @@ async function onMessage(msg: Message) {
                     break
             }
         }
+
         // 除了给filehelper和自己发之外的 所有自己发的消息，不再继续处理，到此为止
-        if (msg.self()) return
+        // if (msg.self()) return
+
         // 匹配用户发的消息开始
         // 完全匹配模式的关键词回复配置 autoReply.json
         if (Global.autoReply) {
@@ -216,7 +231,8 @@ async function onMessage(msg: Message) {
         }
 
         // 关键词入群，按群名
-        const rooms = require(`${CONFIG_JSON_PATH}/roomAutoJoin.json`).data
+        // const rooms = require(`${CONFIG_JSON_PATH}/roomAutoJoin.json`).data
+        const rooms = await Autojoin.findAll()
         rooms.forEach(async (room) => {
             if (text === room.topic) {
                 // 用户回复的关键词 == 群名
@@ -234,7 +250,7 @@ async function onMessage(msg: Message) {
     // // save msg in db begin
     if (type !== MessageType.Unknown) {
         let content: any = text
-        let save: boolean = false
+        let save: boolean = true
         // save file first
         switch (type) {
             case MessageType.Image:
@@ -243,10 +259,7 @@ async function onMessage(msg: Message) {
             case MessageType.Emoticon:
                 const subDir = MessageType[type].toLowerCase()
                 content = await saveMsgFile(msg, subDir)
-                save = true
-                break
-            case MessageType.Audio:
-                log.error(`MessageType.Video //todo`, `${content}`)
+
                 break
 
             case MessageType.Url:
@@ -257,7 +270,10 @@ async function onMessage(msg: Message) {
                     description: jsonPayload.msg.appmsg.des,
                     thumbnailUrl: jsonPayload.msg.appmsg.thumburl
                 }
-                save = true
+                break
+            case MessageType.Audio:
+                //语音消息，不存储
+                save = false
                 break
             case MessageType.Contact:
             case MessageType.ChatHistory:
@@ -266,6 +282,7 @@ async function onMessage(msg: Message) {
             case MessageType.Transfer:
             case MessageType.RedEnvelope:
             case MessageType.Recalled:
+                save = false
                 break
             default:
                 break
@@ -275,6 +292,7 @@ async function onMessage(msg: Message) {
             log.error(`MessageType`, `${MessageType[type]} not saved! ${content}`)
             return
         }
+        // todo contactId or roomId
         MsgModel.create({
             msgId: msg.id,
             from: from ? from.id : null,

@@ -1,7 +1,7 @@
 const { Forward, Type } = require('../forward')
 
-const CONFIG_JSON_PATH = '../../config'
 ;(async () => {
+    let CONFIG_JSON_PATH = '../../config'
     const config = require(`${CONFIG_JSON_PATH}/forward.json`).data
     config.forEach(async (el) => {
         await Forward.create({

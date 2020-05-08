@@ -12,13 +12,18 @@ async function init() {
     // todo 每天发一个链接
     //let tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
     let tasks: Array<any> = await Schedule.findAll()
-    for (let task of tasks) {
-        log.info('SCHEDULE_inited', JSON.stringify(task))
-    }
 
+    let jobs: Array<any> = []
+    //todo load新任务，当数据库改变时
     tasks.forEach((task) => {
-        cron.scheduleJob(task.cron, () => setOrRun(task))
+        log.info('SCHEDULE_inited', JSON.stringify(task))
+        jobs[task.id] = cron.scheduleJob(task.cron, () => setOrRun(task))
     })
+
+    // var k = schedule.scheduleJob(cancelRule, function () {
+    //     console.log('定时器取消' + moment().format())
+    //     j.cancel();
+    // })
 }
 
 async function setOrRun(task: any) {
