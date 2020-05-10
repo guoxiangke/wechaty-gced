@@ -12,11 +12,14 @@ async function init() {
     // todo 每天发一个链接
     //let tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
     let tasks: Array<any> = await Schedule.findAll()
+    if (tasks.length === 0) {
+        await require('../model/import/schedule')
+    }
 
     let jobs: Array<any> = []
     //todo load新任务，当数据库改变时
     tasks.forEach((task) => {
-        log.info('SCHEDULE_inited', JSON.stringify(task))
+        log.info('SCHEDULE', `${task.id}:${task.cron}:${task.path}`)
         jobs[task.id] = cron.scheduleJob(task.cron, () => setOrRun(task))
     })
 

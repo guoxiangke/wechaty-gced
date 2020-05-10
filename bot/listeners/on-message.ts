@@ -12,6 +12,8 @@ const bot: Wechaty = Global.bot
 // import { RedisClient } from 'redis'
 // const redis: RedisClient = Global.redis
 import { Message as MsgModel } from '../model/message'
+import { Type as ContactModelType } from '../model/contact'
+import { findOrCreate as ContactModelFindOrCreate } from '../model/contactfindOrCreate'
 
 import { Forward as ForwardModel, Type as ForwardType } from '../model/forward'
 
@@ -35,8 +37,6 @@ async function onMessage(msg: Message) {
 
     const text = msg.text()
     const room = msg.room()
-    const from = msg.from()
-    const to = msg.to()
 
     let type: number | any = msg.type()
 
@@ -256,10 +256,24 @@ async function onMessage(msg: Message) {
             return
         }
         // todo contactId or roomId
+        let contactModel = await ContactModelFindOrCreate(
+            sender,
+            room ? ContactModelType.RoomMemeber : ContactModelType.Contact
+        )
+
+        // let to = room ? room.id : to ? to.id : null
+        let to: any = null
+        if (room) {
+            to = room.id
+        } else {
+            to = msg.to()
+            to = to.id
+        }
+
         MsgModel.create({
             msgId: msg.id,
-            from: from ? from.id : null,
-            to: room ? room.id : to ? to.id : null,
+            fromId: contactModel.id,
+            to: to, // @room or wx_id
             type: type,
             content: { data: content }
         }).then(() => log.info('onMessage', `MsgModel ${MessageType[type]}: created`))

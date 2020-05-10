@@ -6,7 +6,6 @@ class Message extends Model {
     public id!: number // Note that the `null assertion` `!` is required in strict mode.
     public fromId!: number // message.from() ⇒ Contact | null
     public toId!: number | null //message.to() ⇒ Contact | null
-    public roomId!: number | null //message.room() ⇒ Room | null
     public type!: number | null //message.type() ⇒ MessageType
     public text!: string | null // for nullable fields
     public content!: string | null // for nullable fields
@@ -28,8 +27,8 @@ class Message extends Model {
                 unique: true,
                 allowNull: false
             },
-            from: {
-                type: DataTypes.STRING,
+            fromId: {
+                type: DataTypes.BIGINT.UNSIGNED,
                 allowNull: false
             },
             to: {
@@ -49,7 +48,7 @@ class Message extends Model {
         },
         {
             tableName: 'messages',
-            indexes: [{ fields: ['from'] }, { fields: ['to'] }],
+            indexes: [{ fields: ['to'] }],
             sequelize: db // this bit is important
         }
     )

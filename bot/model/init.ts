@@ -3,6 +3,7 @@ import { Contact } from './contact'
 // import { Message } from './message'
 import { Room } from './room'
 import { Member } from './member'
+import { Message } from './message'
 // import { HasMany } from 'sequelize/types'
 
 require('./autoreply')
@@ -12,11 +13,11 @@ require('./forward')
 require('./autojoin')
 require('./filebox') //  确保每个文件只存储一次
 
-// //
-// Contact.hasMany(Message, {
-//     foreignKey: 'fromId'
-// })
-// Message.belongsTo(Contact)
+//
+Contact.hasMany(Message, {
+    foreignKey: 'fromId'
+})
+Message.belongsTo(Contact)
 
 // //
 // Room.hasMany(Message, {
