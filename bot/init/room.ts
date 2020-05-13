@@ -44,6 +44,10 @@ async function thenAllMember() {
         let roomInstance = await RoomModel.findOne({
             where: { roomId: room.id }
         })
+        if (!roomInstance) {
+            log.error('RoomInitAllMembers', `!roomInstance`)
+            return
+        }
         log.verbose('RoomInitAllMembers', `${roomInstance.id}`)
         for (const contact of contacts) {
             const contactInstance = await findOrCreate(contact, Type.RoomMemeber)

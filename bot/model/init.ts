@@ -1,14 +1,15 @@
 const { db } = require('./db.config')
 import { Contact } from './contact'
-// import { Message } from './message'
 import { Room } from './room'
 import { Member } from './member'
 import { Message } from './message'
-// import { HasMany } from 'sequelize/types'
+import { Job } from './job'
+import { Subscription } from './subscription'
 
 require('./autoreply')
 require('./message')
-require('./schedule')
+require('./job')
+require('./subscription')
 require('./forward')
 require('./autojoin')
 require('./filebox') //  确保每个文件只存储一次
@@ -19,17 +20,18 @@ Contact.hasMany(Message, {
 })
 Message.belongsTo(Contact)
 
-// //
-// Room.hasMany(Message, {
-//     foreignKey: 'roomId'
-// })
-// Message.belongsTo(Room)
+//
+Job.hasMany(Subscription, {
+    foreignKey: 'jobId'
+})
+Subscription.belongsTo(Job)
 
-// todo: roomOwner //
-// Contact.hasMany(Room, {
-//     foreignKey: 'ownerId'
-// })
-// Room.belongsTo(Contact)
+//roomOwner
+Contact.hasMany(Room, {
+    as: 'owner',
+    foreignKey: 'ownerId'
+})
+Room.belongsTo(Contact)
 
 // const Movie = sequelize.define('Movie', { name: DataTypes.STRING });
 // const Actor = sequelize.define('Actor', { name: DataTypes.STRING });
@@ -50,7 +52,7 @@ db.sync({
 
 Room.hasMany(Member, {
     foreignKey: 'roomId',
-    as: 'Contact'
+    as: 'member'
 })
 Member.belongsTo(Room)
 

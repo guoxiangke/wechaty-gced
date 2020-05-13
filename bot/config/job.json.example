@@ -1,0 +1,22 @@
+{
+    "data": [
+        {
+            "name": "每日诗篇(150)",
+            "type": "Audio",
+            "path": "/Users/dale/Code/juzibot/GCED/files/19_Psalm/19_${current}.mp3",
+            "by": "count",
+            "count": 150,
+            "pad": 3,
+            "fill": "0"
+        },
+        {
+            "name": "每日祈祷(365)",
+            "type": "Video",
+            "path": "https://ybzx.51share.ml/PrayEveryday/videos/${current}.mp4",
+            "by": "date",
+            "count": null,
+            "pad": null,
+            "fill": null
+        }
+    ]
+}

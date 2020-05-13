@@ -5,22 +5,24 @@ const moment = require('moment')
 import { Vars as Global } from '../global-var'
 const bot: Wechaty = Global.bot
 
-const { Schedule } = require('../model/schedule')
+import { Job } from '../model/job'
+const { Subscription } = require('../model/subscription')
 
 async function init() {
     const cron = require('node-schedule')
     // todo 每天发一个链接
     //let tasks = require(`${CONFIG_JSON_PATH}/schedule.json`).data
-    let tasks: Array<any> = await Schedule.findAll()
-    if (tasks.length === 0) {
-        await require('../model/import/schedule')
+
+    let subscriptions: Array<any> = await Subscription.findAll()
+    if (subscriptions.length === 0) {
+        await require('../model/import/subscription')
     }
 
     let jobs: Array<any> = []
     //todo load新任务，当数据库改变时
-    tasks.forEach((task) => {
-        log.info('SCHEDULE', `${task.id}:${task.cron}:${task.path}`)
-        jobs[task.id] = cron.scheduleJob(task.cron, () => setOrRun(task))
+    subscriptions.forEach((subscription) => {
+        log.info('SCHEDULE', `taskId:${subscription.taskId} cron:${subscription.cron}`)
+        jobs[subscription.id] = cron.scheduleJob(subscription.cron, () => setOrRun(subscription))
     })
 
     // var k = schedule.scheduleJob(cancelRule, function () {
@@ -29,34 +31,34 @@ async function init() {
     // })
 }
 
-async function setOrRun(task: any) {
-    const rule = task.current.data
+async function setOrRun(subscription: any) {
+    let job = await Job.findOne({ where: { id: subscription.jobId } })
+    log.info('SCHEDULE', `${JSON.stringify(job)}`)
 
-    let current: String = ''
-    if (task.by === 'count') {
-        const startDate = moment(rule.from, 'YYYY-M-DD')
+    let current: string = ''
+    if (job.by === 'count') {
+        const startDate = moment(subscription.offset, 'YYYY-M-DD')
         const daysDiff = moment().diff(startDate, 'days')
-        current = String(daysDiff % rule.count)
-        if (rule.hasOwnProperty('pad')) {
-            current = current.padStart(rule.pad.maxLength, rule.pad.fillString)
+        current = String(daysDiff % job.count)
+        if (job.pad && job.fill) {
+            current = current.padStart(job.pad, job.fill)
         }
     }
-    if (task.by === 'date') {
+    if (job.by === 'date') {
         current = moment().format('MMDD') //0101.mp4
     }
-    const path = task.path.replace('${current}', current)
+    const path = job.path.replace('${current}', current)
 
+    log.info('SCHEDULE', `Current:${current} Resource:${path}`)
     // todo answer = Text 每日一句
     let answer: any
-    if (task.path.startsWith('http')) {
+    if (job.path.startsWith('http')) {
         answer = FileBox.fromUrl(encodeURI(path))
     } else {
         answer = FileBox.fromFile(path)
     }
 
-    log.info('SCHEDULE', `Current:${current} Resource:${path}`)
-
-    task.to.data.forEach(async (el) => {
+    subscription.to.data.forEach(async (el) => {
         let receiver: Room | Contact | null = null
         if (el.type === 'room') {
             // get the room by topic
