@@ -31,10 +31,18 @@ function startBot() {
     bot.on('heartbeat', './listeners/on-heartbeat')
     // 入群发送欢迎消息/群公告 @see ./config/autojoin.json
     bot.on('room-join', './listeners/on-room-join')
+    bot.on('room-invite', './listeners/on-room-invite')
+    bot.on('room-topic', './listeners/on-room-topic')
+    bot.on('friendship', './listeners/on-friendship')
 
     bot.start()
         .then(() => log.info('Bot Started.'))
-        .catch((e) => log.error('StarterBot', e))
+        // .catch((e) => log.error('StarterBot', e))
+        .catch(async (e) => {
+            log.error('Bot', 'init() fail: %s', e)
+            await bot.stop()
+            process.exit(-1)
+        })
 }
 
 async function main() {
