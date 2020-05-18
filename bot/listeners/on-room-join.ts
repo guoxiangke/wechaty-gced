@@ -17,9 +17,10 @@ async function onRoomJoin(room: Room, inviteeList: Array<Contact>, inviter: Cont
     // 如果机器人被拉到一个新的群组里, inviteeList[0] === bot.self()
     // 然而并不等于！！！需要.id来判断
     if (inviteeList[0].id === bot.userSelf().id) {
-        await room.say(
-            '新人报道，多多关照！\r\n@群主，我可以为本群定制新人欢迎信息！要开通，请@我 回复 #群欢迎'
-        )
+        await room.say('新人报道[转圈]，多多关照[抱拳]')
+        const owner: Contact | null = room.owner()
+        if (!owner) return
+        await room.say('，我可以为本群定制新人欢迎信息！要开通，请@我 回复 #群欢迎', owner)
     } else {
         // 新人加入
         //如果是自己的群，发布群公告

@@ -12,6 +12,7 @@ async function onRoomTopic(room: Room, newTopic: string, oldTopic: string, chang
         const isOwner = owner.self()
 
         // bot是群主,rollback
+        // todo 群名防修改监控功能！|| inArray('config')
         if (isOwner) {
             await room.topic(oldTopic)
             await room.say(`请勿随意更改群名`, changer)

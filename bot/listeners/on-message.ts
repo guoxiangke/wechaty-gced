@@ -234,6 +234,7 @@ async function onMessage(msg: Message) {
                     thumbnailUrl: jsonPayload.msg.appmsg.thumburl
                 }
                 break
+            case MessageType.MiniProgram: //todo  主动发送小程序！
             case MessageType.Audio:
                 //语音消息，不存储
                 save = false
@@ -241,7 +242,6 @@ async function onMessage(msg: Message) {
             case MessageType.Contact:
             case MessageType.ChatHistory:
             case MessageType.Location:
-            case MessageType.MiniProgram:
             case MessageType.Transfer:
             case MessageType.RedEnvelope:
             case MessageType.Recalled:
@@ -252,7 +252,7 @@ async function onMessage(msg: Message) {
         }
         //get content to save
         if (!save) {
-            log.error(`MessageType`, `${MessageType[type]} not saved! ${content}`)
+            log.info(`MessageType`, `${MessageType[type]} not saved! ${content}`)
             return
         }
         // todo contactId or roomId
@@ -286,7 +286,7 @@ async function onMessage(msg: Message) {
 /**
  * saveMsgFile
  */
-async function saveMsgFile(msg, subDir) {
+async function saveMsgFile(msg, subDir: string) {
     const file = await msg.toFileBox()
     const targetDir = `./files/msg/${subDir}`
     // TODO md5 files!!!
@@ -330,27 +330,27 @@ async function saveMsgFile(msg, subDir) {
     return fileBox.path
 }
 
-// 转发处理，转发源分2重情况：room或contact 即转发来自群的消息或转发来自某个联系人的消息
-// 如果是来自群的消息，可以配置只转发群内的某几个人的消息，或者全部转发（senders为空）
-function forwardTo(destinations: Array<any>, msg) {
+/**
+ *
+ * @param destinations: Array<any>
+ * @param msg: Message
+    转发处理，转发源分2重情况：room或contact 即转发来自群的消息或转发来自某个联系人的消息
+    如果是来自群的消息，可以配置只转发群内的某几个人的消息，或者全部转发（senders为空）
+
+    已支持 小程序转发
+ */
+function forwardTo(destinations: Array<any>, msg: Message) {
     const text = msg.text()
     let type: number | any = msg.type()
     destinations.forEach(async (to) => {
         let unknownMsg: any
+
         if (type == MessageType.Unknown) {
-            //MessageType.Unknown
+            // Music support in receive and forward
+            // https://github.com/wechaty/wechaty-puppet-padplus/issues/243
             const jsonPayload = await xml_to_json.xmlToJson(text)
             if (jsonPayload.msg.appmsg.type == 3) {
-                // type = 'MusicLink' // 15 Music
-
-                // 解析 Music xml to new msg filebox
-                //msg.appmsg.title = 【620】旷野吗哪
-                //msg.appmsg.des = 点击▶️收听 公众号:云彩助手 每日更新
-                //msg.appmsg.type = 3
-                //msg.appmsg.url = http://lyw/ly/audio/2020/mw/mw200507.mp3
-                //msg.appmsg.lowurl = http://lym/ly/audio/2020/mw/mw200507.mp3
-                //msg.appmsg.dataurl = http://lywxaudio/2020/mw/mw200507.mp3
-
+                // type = 'MusicLink' // 15 Music ？
                 unknownMsg = new UrlLink({
                     description: jsonPayload.msg.appmsg.des + ' 点击[浮窗]后台播放',
                     thumbnailUrl: 'https://res.wx.qq.com/a/wx_fed/assets/res/OTE0YTAw.png',
@@ -358,10 +358,6 @@ function forwardTo(destinations: Array<any>, msg) {
                     url: jsonPayload.msg.appmsg.url
                 })
             }
-            // 33 小程序
-            //msg.appmsg.title = 最新传来！白头牧师又出现,这次讲道更精彩!!全场入神...
-            //msg.appmsg.type = 33
-            //。url
         }
         if (to.type === 'room' && to.topic in Global.indexRooms) {
             let room = Global.indexRooms[to.topic]
