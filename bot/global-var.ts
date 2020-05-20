@@ -7,6 +7,7 @@ export class Vars {
     public declare static allRooms: Array<Room>
     public declare static indexRooms: Array<Room>
     public declare static myRooms: Array<Room>
+    public declare static autoJoinRooms: Array<Room>
 
     public declare static autoReply: boolean
     public declare static aiReply: boolean

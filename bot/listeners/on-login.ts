@@ -1,5 +1,6 @@
 import { log, Contact, Wechaty, Room } from 'wechaty'
 import { Vars as Global } from '../global-var'
+import { Autojoin } from '../model/autojoin'
 
 async function onLogin(user: Contact) {
     log.info(`bot ${user} login`)
@@ -14,21 +15,32 @@ async function onLogin(user: Contact) {
     let allRooms = await bot.Room.findAll()
     Global.allRooms = allRooms
 
+    // 读取数据库配置
+    let autoJoinRooms: Array<Room> = []
+    let autoJoinRoomTopics: Array<String> = []
+    const rooms = await Autojoin.findAll()
+    rooms.forEach(async (room) => {
+        autoJoinRoomTopics.push(room.topic)
+    })
+
     //只处理最后一个同名的群，忽略其他同名群
     let indexRooms: Array<Room> = []
-    allRooms.map(async (room) => {
-        indexRooms[await room.topic()] = room
-    })
-    Global.indexRooms = indexRooms
-
     let myRooms: Array<Room> = []
     allRooms.map(async (room) => {
+        const topic = await room.topic()
+        indexRooms[topic] = room
         const owner: Contact | null = room.owner()
         if (owner && owner.self()) {
-            myRooms[await room.topic()] = room
+            myRooms[topic] = room
+        }
+        // 加入到内存
+        if (autoJoinRoomTopics.includes(topic)) {
+            autoJoinRooms[topic] = room
         }
     })
+    Global.indexRooms = indexRooms
     Global.myRooms = myRooms
+    Global.autoJoinRooms = autoJoinRooms
     /**
      * 初始化
      * 存储/更新 所有联系人和聊天室 from wxbot

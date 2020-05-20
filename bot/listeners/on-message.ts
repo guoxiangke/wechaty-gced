@@ -2,7 +2,7 @@ import { log, Contact, Message, Wechaty, UrlLink, Room } from 'wechaty'
 import { MessageType } from 'wechaty-puppet'
 
 import { Autoreply } from '../model/autoreply'
-import { Autojoin } from '../model/autojoin'
+// import { Autojoin } from '../model/autojoin'
 import { FileBox } from '../model/filebox'
 const crypto = require('crypto')
 // Global.autoReply 全局控制变量
@@ -99,6 +99,7 @@ async function onMessage(msg: Message) {
             challenge(msg, room, text, sender, msgSenderAlias)
         }
     } else {
+        let replied: boolean = false //已处理
         // 处理个人消息
         // bot 主动发消息到个人
         // bot 主动发消息到群，没有msg.to()
@@ -134,7 +135,6 @@ async function onMessage(msg: Message) {
         if (Global.autoReply) {
             // const autoReplyConfig = require(`${CONFIG_JSON_PATH}/autoReply.json`).data
             const autoReplyConfig = await Autoreply.findAll()
-            let replied: boolean = false
             for (let reply of autoReplyConfig) {
                 // https://www.cnblogs.com/season-huang/p/3544873.html
                 const re = new RegExp('^' + reply.keyword + '$', 'i')
@@ -186,26 +186,21 @@ async function onMessage(msg: Message) {
                     }
                 }
             }
-            if (!replied) {
-                await sender.say(await getDefaultReply())
-            }
         }
 
         // 关键词入群，按群名
-        // const rooms = require(`${CONFIG_JSON_PATH}/roomAutoJoin.json`).data
-        const rooms = await Autojoin.findAll()
-        rooms.forEach(async (room) => {
-            if (text === room.topic) {
-                // 用户回复的关键词 == 群名
-                const myRoom = await bot.Room.find({ topic: room.topic })
-                if (!myRoom) return
-                if (await myRoom.has(sender)) {
-                    sender.say('You are already in the room')
-                }
-                await sender.say(`Will put you in ${room.topic} room!`)
+        const rooms = Global.autoJoinRooms
+        const topics = Object.keys(rooms)
+        if (topics.includes(text)) {
+            replied = true
+            const myRoom = rooms[text]
+            if (await myRoom.has(sender)) {
+                sender.say('You are already in the room')
+            } else {
+                await sender.say(`Will put you in ${text} room!`)
                 myRoom.add(sender)
             }
-        })
+        }
 
         // forward begin 转发个人配置
         const forwards = await ForwardModel.findAll({ where: { fromType: ForwardType.Contact } })
@@ -217,6 +212,9 @@ async function onMessage(msg: Message) {
             }
         }
         // forward end
+        if (!replied) {
+            await sender.say(await getDefaultReply())
+        }
     }
 
     // // save msg in db begin
@@ -402,7 +400,7 @@ async function getDefaultReply() {
         defaultReply += `【${reply.keyword}】\r`
     }
 
-    const rooms = Global.myRooms
+    const rooms = Global.autoJoinRooms
     let defaultRooms: string = ''
     for (var topic in rooms) {
         defaultRooms += `【${topic}】\r`
