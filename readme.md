@@ -9,6 +9,9 @@
 
 bot 有几个垂直领域的群，都不是群主，但是每个群每天都在打开学习（可以持续 365 天的那种），但是微信新出的群打卡 1.列表长 2.书写麻烦，于是乎想做一个群打卡机器人，在使用特定关键词打卡后，进行友好回应提示，并给出激励提醒。（@you，恭喜您完成今日 xx 学习挑战，您已坚持 count 天，✊ 加油啊！）
 
+https://wechaty.js.org/v/zh/api
+https://github.com/wechaty/wechaty-puppet-padplus
+
 ![2020-04-22_14-47-57](https://i.loli.net/2020/04/22/GbYLMgv39A7JdZf.jpg)
 
 ## 功能
@@ -22,6 +25,7 @@ bot 有几个垂直领域的群，都不是群主，但是每个群每天都在�
     -   [x] 数据库配置
     -   [ ] UI
         -   [ ] https://github.com/bezkoder/vue-typescript-crud
+        -   [ ] https://bezkoder.com/vue-typescript-crud/
     -   [ ] 指定公众号消息的第 X 条消息转发到指定群里（不可能实现 🙅‍♂️）
 -   定时发送/群/联系人
     -   [x] 自定义配置

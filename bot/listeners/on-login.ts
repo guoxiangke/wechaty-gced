@@ -1,4 +1,4 @@
-import { log, Contact, Wechaty } from 'wechaty'
+import { log, Contact, Wechaty, Room } from 'wechaty'
 import { Vars as Global } from '../global-var'
 
 async function onLogin(user: Contact) {
@@ -15,11 +15,20 @@ async function onLogin(user: Contact) {
     Global.allRooms = allRooms
 
     //只处理最后一个同名的群，忽略其他同名群
-    let indexRooms: Array<any> = []
+    let indexRooms: Array<Room> = []
     allRooms.map(async (room) => {
         indexRooms[await room.topic()] = room
     })
     Global.indexRooms = indexRooms
+
+    let myRooms: Array<Room> = []
+    allRooms.map(async (room) => {
+        const owner: Contact | null = room.owner()
+        if (owner && owner.self()) {
+            myRooms[await room.topic()] = room
+        }
+    })
+    Global.myRooms = myRooms
     /**
      * 初始化
      * 存储/更新 所有联系人和聊天室 from wxbot

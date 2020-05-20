@@ -134,6 +134,7 @@ async function onMessage(msg: Message) {
         if (Global.autoReply) {
             // const autoReplyConfig = require(`${CONFIG_JSON_PATH}/autoReply.json`).data
             const autoReplyConfig = await Autoreply.findAll()
+            let replied: boolean = false
             for (let reply of autoReplyConfig) {
                 // https://www.cnblogs.com/season-huang/p/3544873.html
                 const re = new RegExp('^' + reply.keyword + '$', 'i')
@@ -143,6 +144,7 @@ async function onMessage(msg: Message) {
                     switch (reply.type) {
                         case MessageType.Text:
                             await sender.say(reply.content.data)
+                            replied = true
                             break
 
                         case MessageType.Contact:
@@ -153,6 +155,7 @@ async function onMessage(msg: Message) {
                             }
                             const contactCard = bot.Contact.load(contact.id)
                             await sender.say(contactCard)
+                            replied = true
                             break
 
                         case MessageType.Audio:
@@ -168,11 +171,13 @@ async function onMessage(msg: Message) {
                                 fileBox = FileBox.fromFile(`${reply.content.data}`)
                             }
                             await sender.say(fileBox)
+                            replied = true
                             break
 
                         case MessageType.Url:
                             const urlLink = new UrlLink(reply.content.data)
                             await sender.say(urlLink)
+                            replied = true
                             break
 
                         default:
@@ -180,6 +185,9 @@ async function onMessage(msg: Message) {
                             break
                     }
                 }
+            }
+            if (!replied) {
+                await sender.say(await getDefaultReply())
             }
         }
 
@@ -338,6 +346,7 @@ async function saveMsgFile(msg, subDir: string) {
     如果是来自群的消息，可以配置只转发群内的某几个人的消息，或者全部转发（senders为空）
 
     已支持 小程序转发
+    https://github.com/wechaty/wechaty-puppet-padplus/issues/226
  */
 function forwardTo(destinations: Array<any>, msg: Message) {
     const text = msg.text()
@@ -382,5 +391,25 @@ function forwardTo(destinations: Array<any>, msg: Message) {
             }
         }
     })
+}
+
+async function getDefaultReply() {
+    const autoReplyConfig = await Autoreply.findAll()
+    let defaultReply: string =
+        '亲，暂无法解析本次请求[抱拳]\r请回复以下关键词获取资源\r===============\r'
+    for (let reply of autoReplyConfig) {
+        // https://www.cnblogs.com/season-huang/p/3544873.html
+        defaultReply += `【${reply.keyword}】\r`
+    }
+
+    const rooms = Global.myRooms
+    let defaultRooms: string = ''
+    for (var topic in rooms) {
+        defaultRooms += `【${topic}】\r`
+    }
+    if (defaultRooms) {
+        defaultReply += `\r回复群名，自动入群\r===============\r${defaultRooms}`
+    }
+    return defaultReply
 }
 module.exports = onMessage

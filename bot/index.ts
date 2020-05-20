@@ -56,8 +56,6 @@ main().catch((e) => log.error('StarterBot', e))
 
 async function initBot() {
     const puppet = new PuppetPadplus()
-    // 如何能不多次扫码登陆机器人
-    // https://wechaty.js.org/v/zh/faq#login-status-persistent
     const name = process.env.WECHATY_NAME || 'grace365'
     const bot = new Wechaty({ name, puppet })
     Global.bot = bot
@@ -66,8 +64,8 @@ async function initBot() {
 async function initDataBase() {
     var levelup = require('levelup')
     var leveldown = require('leveldown')
-    Global.rocksdb = await levelup(leveldown('../rocksdb'))
-    log.error('DB', 'inited Global.rocksdb')
+    Global.rocksdb = await levelup(leveldown('./rocksdb'))
+    log.info('initDataBase', 'Global.rocksdb')
     // Global.redis = redis
     // Global.redisSync = redisSync
 
