@@ -20,7 +20,7 @@ async function onRoomJoin(room: Room, inviteeList: Array<Contact>, inviter: Cont
         await room.say('新人报道[转圈]，多多关照[抱拳]')
         const owner: Contact | null = room.owner()
         if (!owner) return
-        await room.say('，我可以为本群定制新人欢迎信息！要开通，请@我 回复 #群欢迎', owner)
+        await room.say('，我可以为本群定制新人欢迎信息！要开通，请群主@我并回复群欢迎', owner)
     } else {
         // 新人加入
         //如果是自己的群，发布群公告
@@ -31,14 +31,18 @@ async function onRoomJoin(room: Room, inviteeList: Array<Contact>, inviter: Cont
                 inviteeName +
                     ' 欢迎加入【' +
                     topic +
-                    '】\n\r====本群公告====\r\n' +
+                    '】\r=====本群公告=====\r' +
                     (await room.announce())
                 // inviter.name()
             )
         } else {
-            //如果不是，&& 配置了发送欢迎消息，则发送欢迎信息
-            // const inviteeName = inviteeList.map((c) => c.name()).join(', ')
-            // await room.say(inviteeName + '\r\n欢迎加入【' + topic + '】\r\n请先查阅群公告')
+            const rooms = Global.autoJoinRooms
+            const topics = Object.keys(rooms)
+            if (topics.includes(topic)) {
+                //如果不是，&& 配置了发送欢迎消息，则发送欢迎信息
+                const inviteeName = inviteeList.map((c) => c.name()).join(', ')
+                await room.say(inviteeName + '\r欢迎您加入本群\r请先查阅群公告')
+            }
         }
     }
     log.warn('onRoomJoin', 'room: %s  inviteeList:%s Contact:%s ', room, inviteeList, inviter)

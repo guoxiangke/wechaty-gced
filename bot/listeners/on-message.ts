@@ -2,7 +2,7 @@ import { log, Contact, Message, Wechaty, UrlLink, Room } from 'wechaty'
 import { MessageType } from 'wechaty-puppet'
 
 import { Autoreply } from '../model/autoreply'
-// import { Autojoin } from '../model/autojoin'
+import { Autojoin } from '../model/autojoin'
 import { FileBox } from '../model/filebox'
 const crypto = require('crypto')
 // Global.autoReply 全局控制变量
@@ -92,6 +92,28 @@ async function onMessage(msg: Message) {
             }
         }
         // forward end for room
+
+        //([有人@我])
+        if (await msg.mentionSelf()) {
+            // 入群管理begin
+            const owner = room.owner()
+            //必须是群主@bot
+            if (owner === sender) {
+                if (text.indexOf('入群管理') != -1) {
+                    // 加入数据库/并内存
+                    Global.autoJoinRooms[topic] = room
+                    await Autojoin.findOrCreate({
+                        where: {
+                            topic: topic
+                        }
+                    })
+                    room.say(
+                        `已为本群开通本功能，新用户可以回复本群名给本bot即可自动入群，请关闭群邀请确认功能`
+                    )
+                }
+            }
+            // 入群管理end
+        }
 
         // #群挑战#
         if (false) {
