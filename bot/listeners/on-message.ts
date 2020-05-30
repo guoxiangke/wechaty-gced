@@ -375,6 +375,7 @@ function forwardTo(destinations: Array<any>, msg: Message) {
         let unknownMsg: any
 
         if (type == MessageType.Unknown) {
+            // todo add Music & Location Support
             // Music support in receive and forward
             // https://github.com/wechaty/wechaty-puppet-padplus/issues/243
             const jsonPayload = await xml_to_json.xmlToJson(text)
@@ -388,27 +389,27 @@ function forwardTo(destinations: Array<any>, msg: Message) {
                 })
             }
         }
+
+        let who: Contact | Room | null = null
+        // 转发到room
         if (to.type === 'room' && to.topic in Global.indexRooms) {
-            let room = Global.indexRooms[to.topic]
-            if (type !== MessageType.Unknown) {
-                log.info('onMessage', `FORWOARD_TO ${room}`)
-                await msg.forward(room)
-            } else {
-                await room.say(unknownMsg)
-            }
+            who = Global.indexRooms[to.topic]
         }
+        //转发给个人
         if (to.type === 'contact') {
-            //转发给个人
             // https://github.com/wechaty/wechaty/issues/1217  Contact.find(error!)
-            let who = await bot.Contact.find({ alias: to.alias })
-            if (who) {
-                if (type !== MessageType.Unknown) {
-                    log.info('onMessage', `FORWOARD_TO ${who}`)
-                    await msg.forward(who)
-                } else {
-                    await who.say(unknownMsg)
-                }
+            who = await bot.Contact.find({ alias: to.alias })
+        }
+
+        if (who) {
+            if (type !== MessageType.Unknown) {
+                log.info('onMessage', `FORWOARD_TO ${who}`)
+                await msg.forward(who)
+            } else {
+                await who.say(unknownMsg)
             }
+        } else {
+            log.error('forwardTo', 'Failed, no who')
         }
     })
 }
